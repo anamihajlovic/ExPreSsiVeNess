@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Tree view{% endblock %}
+{% load staticfiles %}
+
+
+
+{% block tree_view %}
+
+    <script src="{% static 'tree_view.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'core/style.css' %}">
+
+    {% if error %}
+        {{ error }}
+    {% endif %}
+
+    {% for node in filtered_nodes %}
+        {% if node in search_nodes %}
+            <dt style="display:inline-block; color: red" >{{ node.name }}</dt>
+        {% else %}
+            <dt style="display:inline-block" >{{ node.name }}</dt>
+        {% endif %}
+        {% if node.attributes %}
+            <a href="#" id="plus{{ node.node_id}}" name="{{ node.name }}" class="plusLink">
+            <img src="{% static 'core/images/if_plus_118619.png' %}" alt="See attributes!" >
+            </a>
+            <a href="#" id="minus{{ node.node_id}}" name="{{ node.name }}" class="minusLink">
+            <img src="{% static 'core/images/if_minus_118643.png' %}" alt="Close attributes!" >
+            </a>
+
+            <dl id="{{ node.node_id}}"  style="display:none">
+            <p> &nbsp; Attributes:</p>
+            {% for key,value in node.attributes.items %}
+                <dd>&nbsp;&nbsp;&nbsp;- {{ key }} : {{ value }}</dd>
+            {% endfor %}
+            </dl>
+             <br>
+        {% else %}
+            <br>
+
+        {% endif %}
+
+
+
+
+    {% endfor %}
+
+{% endblock %}
+

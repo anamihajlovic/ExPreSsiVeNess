@@ -1,0 +1,128 @@
+{% extends 'core/base.html' %}
+{% load staticfiles %}
+
+
+{% block tree_view %}
+
+    <script src="{% static 'tree_view.js' %}"></script>
+
+    {% for node in filtered_nodes %}
+        {% if node in search_nodes %}
+            <dt style="display:inline-block; color: red" >{{ node.name }}</dt>
+        {% else %}
+            <dt style="display:inline-block" >{{ node.name }}</dt>
+        {% endif %}
+        {% if node.attributes %}
+            <a href="#" id="plus{{ node.node_id}}" name="{{ node.name }}" class="plusLink">
+            <img src="{% static 'core/images/if_plus_118619.png' %}" alt="See attributes!" >
+            </a>
+            <a href="#" id="minus{{ node.node_id}}" name="{{ node.name }}" class="minusLink">
+            <img src="{% static 'core/images/if_minus_118643.png' %}" alt="Close attributes!" >
+            </a>
+
+            <dl id="{{ node.node_id}}"  style="display:none">
+            <p> &nbsp; Attributes:</p>
+            {% for key,value in node.attributes.items %}
+                <dd>&nbsp;&nbsp;&nbsp;- {{ key }} : {{ value }}</dd>
+            {% endfor %}
+            </dl>
+             <br>
+        {% else %}
+            <br>
+
+        {% endif %}
+
+
+    {% endfor %}
+
+{% endblock %}
+
+
+{% block bird_view_display %}
+
+    {% if bird_links == "[];" %}
+        <h3 class="error">Please, load your data first.</h3>
+    {% endif %}
+
+    <script>
+        {% autoescape off %}{{ graph_script }}{% endautoescape %}
+
+        var birdSvg = d3.select("#bird-view").append('svg').attr('width', 500).attr('height', 250).attr('id', 'birdSvg').append('g');
+        var birdLinks = {% autoescape off %}{{ bird_links }}{% endautoescape %};
+
+        var birdGraph = displayGraph(birdSvg, birdLinks, true);
+
+        var zoomBird = d3.behavior
+            .zoom().scaleExtent([0.3, 3])
+            .on('zoom.zoom', function () {
+                birdSvg.attr('transform',
+                    'translate(' + d3.event.translate + ')'
+                    + 'scale(' + d3.event.scale + ')');
+            });
+
+        function zoomFit(paddingPercent, transitionDuration, zoom, root, centerNodes) {
+            var bounds = root.node().getBBox();
+            var parent = root.node().parentElement;
+            var fullWidth = parent.clientWidth,
+                fullHeight = parent.clientHeight;
+            var width = bounds.width,
+                height = bounds.height;
+            var midX = bounds.x + width / 2,
+                midY = bounds.y + height / 2;
+
+            if (width == 0 || height == 0) return;
+            var scale = (paddingPercent || 0.75) / Math.max(width / fullWidth, height / fullHeight);
+            var translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
+
+            if(!centerNodes){
+                root
+                    .transition()
+                    .duration(transitionDuration || 0) // milliseconds
+                    .call(zoom.translate(translate).scale(scale).event);
+            }else {
+                root
+                    .transition()
+                    .duration(transitionDuration || 0); // milliseconds
+                root.selectAll(".node").attr("transform", "translate(200, 150)");
+            }
+
+        }
+
+        function zoomOut() {
+            var centerNodes = false;
+            var nodesToRenderNum = $("#birdSvg").children()[0].children.length;
+            if(nodesToRenderNum == 2){
+              centerNodes = true;
+            }
+            birdGraph.stop();
+            zoomFit(0.95, 250, zoomBird, birdSvg, centerNodes);
+            birdSvg.selectAll('.node').on('mousedown.drag', null);
+        }
+
+        birdGraph.on('end', zoomOut);
+    </script>
+{% endblock %}
+
+{% block data_display %}
+
+    {% if my_links == "[];" %}
+        <h2 class="error">Please, load your data first.</h2>
+    {% endif %}
+
+    <script>
+        var links = {% autoescape off %}{{ my_links }}{% endautoescape %}
+        if (links != '') {
+            d3.select('#data-display').append('svg').attr('width', 1000).attr('height', 650).attr('id', 'graphSvg');
+            var svg = d3.select('svg#graphSvg');
+
+            var zoom = d3.behavior.zoom().scaleExtent([0.3, 3])
+                .on('zoom.zoom', function () {
+                    svg.attr('transform', 'translate(' + d3.event.translate + ')' + 'scale(' + d3.event.scale + ')');
+                });
+            var svg = svg.call(zoom).append('g');
+            var graph = displayGraph(svg, links, false);
+
+        }
+    </script>
+
+{% endblock %}
